@@ -20,19 +20,21 @@ WindowSearchProvider.prototype = {
         Search.SearchProvider.prototype._init.call(this, _('Windows'));
     },
 
-    getResultMeta: function(app) {
+    getResultMeta: function(win) {
+	let tracker = Shell.WindowTracker.get_default();
         let self = this;
-        return { 'id': app,
-                 'name': app.get_name() + ' - ' + app.get_windows()[0].get_title(),
+	let app = tracker.get_window_app(win);
+        return { 'id': win,
+                 'name': app.get_name() + ' - ' + win.get_title(),
                  'createIcon': function(size) {
 				   // return app.create_icon_texture(size);
-		                  return self._getThumbnail(app,size);
+		                  return self._getThumbnail(win,size);
                                }
                };
     },
 
-    _getThumbnail: function(app,size){
-	let mutterWindow = app.get_windows()[0].get_compositor_private();
+    _getThumbnail: function(win,size){
+	let mutterWindow = win.get_compositor_private();
 	if (!mutterWindow)
 	    return null;
 
@@ -48,18 +50,18 @@ WindowSearchProvider.prototype = {
 	return clone;
     },
 
-    _matchTerms: function(apps, terms){
-	let as = apps;
+    _matchTerms: function(wins, terms){
+        let tracker = Shell.WindowTracker.get_default();
 	for (let i = 0; i < terms.length; i++) {
 	    let term = terms[i];
-	    as = as.filter(function(app){
-			       let name = app.get_name();
-			       let title = app.get_windows()[0].get_title();
+	    wins = wins.filter(function(win){
+			       let name = tracker.get_window_app(win).get_name();
+			       let title = win.get_title();
 			       return  (name.indexOf(term) >= 0 ||
 					title.indexOf(term) >= 0);
 			   });
         }
-	return as;
+	return wins;
     },
 
     getInitialResultSet: function(terms) {
@@ -67,23 +69,19 @@ WindowSearchProvider.prototype = {
         let display = screen.get_display();
         let windows = display.get_tab_list(Meta.TabList.NORMAL, screen,
                                            screen.get_active_workspace());
-
-        let appSys = Shell.AppSystem.get_default();
-        let allApps = appSys.get_running ();
-
-	// copy the list
-	return this._matchTerms(allApps.slice(0), terms);
+	return this._matchTerms(windows, terms);
     },
 
     getSubsearchResultSet: function(previousResults, terms) {
         return this._matchTerms(previousResults, terms);
     },
 
-    activateResult: function(app, params) {
-        params = Params.parse(params, { workspace: -1,
-                                        timestamp: 0 });
+    activateResult: function(win, params) {
+	let tracker = Shell.WindowTracker.get_default();
+        // params = Params.parse(params, { workspace: -1,
+        //                                timestamp: 0 });
 
-        app.activate_full(params.workspace, params.timestamp);
+        tracker.get_window_app(win).activate_window(win, global.get_current_time());
     },
 
 };
