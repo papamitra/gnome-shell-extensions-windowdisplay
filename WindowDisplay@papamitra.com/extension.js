@@ -16,13 +16,13 @@ WindowSearchProvider.prototype = {
     __proto__: Search.SearchProvider.prototype,
 
     _init: function() {
-        Search.SearchProvider.prototype._init.call(this, 'window');
+        Search.SearchProvider.prototype._init.call(this, _('Windows'));
     },
 
     getResultMeta: function(app) {
         let self = this;
         return { 'id': app.get_id(),
-                 'name': app.get_name(),
+                 'name': app.get_name() + ' - ' + app.get_windows()[0].get_title(),
                  'createIcon': function(size) {
 				   // return app.create_icon_texture(size);
 		                  return self._getThumbnail(app,size);
@@ -37,19 +37,30 @@ WindowSearchProvider.prototype = {
 
 	let [sizew, sizeh] = size;
 
-	global.log(1);
         let windowTexture = mutterWindow.get_texture ();
-	global.log(2);
 	let [width, height] = windowTexture.get_size();
-	global.log(3);
 	let scale = Math.min(1.0, sizew / width, sizeh / height);
-	global.log(4);
 	let clone = new Clutter.Clone ({ source: windowTexture,
 					 reactive: true,
                                          width: width * scale,
                                          height: height * scale });
 	global.log(clone);
 	return clone;
+    },
+
+    _matchTerms: function(apps, terms){
+	let as = apps;
+	for (let i = 0; i < terms.length; i++) {
+	    let term = terms[i];
+	    as = as.filter(function(app){
+			       let name = app.get_name();
+			       let title = app.get_windows()[0].get_title();
+			       return  (name.indexOf(term) >= 0 ||
+					title.indexOf(term) >= 0);
+			   });
+	    global.log(as);
+        }
+	return as;
     },
 
     getInitialResultSet: function(terms) {
@@ -61,42 +72,12 @@ WindowSearchProvider.prototype = {
         let appSys = Shell.AppSystem.get_default();
         let allApps = appSys.get_running ();
 
-        return allApps;
+	// copy the list
+	return this._matchTerms(allApps.slice(0), terms);
     },
 
     getSubsearchResultSet: function(previousResults, terms) {
-        return previousResults;
-    },
-
-    // from altTab.js
-    _getAppLists: function() {
-        let tracker = Shell.WindowTracker.get_default();
-        let appSys = Shell.AppSystem.get_default();
-        let allApps = appSys.get_running ();
-
-        let screen = global.screen;
-        let display = screen.get_display();
-        let windows = display.get_tab_list(Meta.TabList.NORMAL, screen,
-                                           screen.get_active_workspace());
-
-        // windows is only the windows on the current workspace. For
-        // each one, if it corresponds to an app we know, move that
-        // app from allApps to apps.
-        let apps = [];
-        for (let i = 0; i < windows.length && allApps.length != 0; i++) {
-            let app = tracker.get_window_app(windows[i]);
-            let index = allApps.indexOf(app);
-            if (index != -1) {
-                apps.push(app);
-                allApps.splice(index, 1);
-            }
-        }
-
-        // Now @apps is a list of apps on the current workspace, in
-        // standard Alt+Tab order (MRU except for minimized windows),
-        // and allApps is a list of apps that only appear on other
-        // workspaces, sorted by user_time, which is good enough.
-        return [apps, allApps];
+        return this._matchTerms(previousResults, terms);
     },
 
 };
