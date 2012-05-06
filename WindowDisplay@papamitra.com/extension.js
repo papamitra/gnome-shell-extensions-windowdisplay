@@ -7,6 +7,7 @@ const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Shell = imports.gi.Shell;
 const Meta = imports.gi.Meta;
+const Params = imports.misc.params;
 
 function WindowSearchProvider() {
     this._init();
@@ -21,7 +22,7 @@ WindowSearchProvider.prototype = {
 
     getResultMeta: function(app) {
         let self = this;
-        return { 'id': app.get_id(),
+        return { 'id': app,
                  'name': app.get_name() + ' - ' + app.get_windows()[0].get_title(),
                  'createIcon': function(size) {
 				   // return app.create_icon_texture(size);
@@ -44,7 +45,6 @@ WindowSearchProvider.prototype = {
 					 reactive: true,
                                          width: width * scale,
                                          height: height * scale });
-	global.log(clone);
 	return clone;
     },
 
@@ -58,7 +58,6 @@ WindowSearchProvider.prototype = {
 			       return  (name.indexOf(term) >= 0 ||
 					title.indexOf(term) >= 0);
 			   });
-	    global.log(as);
         }
 	return as;
     },
@@ -78,6 +77,13 @@ WindowSearchProvider.prototype = {
 
     getSubsearchResultSet: function(previousResults, terms) {
         return this._matchTerms(previousResults, terms);
+    },
+
+    activateResult: function(app, params) {
+        params = Params.parse(params, { workspace: -1,
+                                        timestamp: 0 });
+
+        app.activate_full(params.workspace, params.timestamp);
     },
 
 };
@@ -103,13 +109,5 @@ WindowSearchExtension.prototype = {
 };
 
 function init() {
-    global.log('exec init');
     return new WindowSearchExtension();
-}
-
-// for gnome-3.0
-function main() {
-    global.log('exec main');
-    let windowProvider = new WindowSearchProvider();
-    Main.overview.viewSelector.addSearchProvider(windowsProvider);
 }
