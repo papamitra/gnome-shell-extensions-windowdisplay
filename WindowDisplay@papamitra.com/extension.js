@@ -53,12 +53,12 @@ WindowSearchProvider.prototype = {
     _matchTerms: function(wins, terms){
         let tracker = Shell.WindowTracker.get_default();
 	for (let i = 0; i < terms.length; i++) {
-	    let term = terms[i];
+	    let term = terms[i].toUpperCase();
 	    wins = wins.filter(function(win){
 			       let name = tracker.get_window_app(win).get_name();
 			       let title = win.get_title();
-			       return  (name.indexOf(term) >= 0 ||
-					title.indexOf(term) >= 0);
+			       return  (name.toUpperCase().indexOf(term) >= 0 ||
+					title.toUpperCase().indexOf(term) >= 0);
 			   });
         }
 	return wins;
