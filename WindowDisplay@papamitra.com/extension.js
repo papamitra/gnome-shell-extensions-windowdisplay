@@ -67,8 +67,13 @@ WindowSearchProvider.prototype = {
     getInitialResultSet: function(terms) {
         let screen = global.screen;
         let display = screen.get_display();
-        let windows = display.get_tab_list(Meta.TabList.NORMAL, screen,
-                                           screen.get_active_workspace());
+	let windows = []
+	for(let i=0; i < screen.n_workspaces; i++){
+	    windows = windows.concat(
+		display.get_tab_list(Meta.TabList.NORMAL,
+				     screen,
+				     screen.get_workspace_by_index(i)));
+	}
 	return this._matchTerms(windows, terms);
     },
 
