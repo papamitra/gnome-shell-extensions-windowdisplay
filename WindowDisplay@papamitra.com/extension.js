@@ -9,6 +9,8 @@ const Shell = imports.gi.Shell;
 const Meta = imports.gi.Meta;
 const Params = imports.misc.params;
 
+const St = imports.gi.St;
+
 function WindowSearchProvider() {
     this._init();
 }
@@ -27,7 +29,6 @@ WindowSearchProvider.prototype = {
         return { 'id': win,
                  'name': app.get_name() + ' - ' + win.get_title(),
                  'createIcon': function(size) {
-				   // return app.create_icon_texture(size);
 		                  return self._getThumbnail(win,size);
                                }
                };
@@ -47,7 +48,10 @@ WindowSearchProvider.prototype = {
 					 reactive: true,
                                          width: width * scale,
                                          height: height * scale });
-	return clone;
+
+        let bin = new St.Bin();
+	bin.add_actor(clone);
+	return bin;
     },
 
     _matchTerms: function(wins, terms){
