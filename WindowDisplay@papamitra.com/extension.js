@@ -39,19 +39,34 @@ WindowSearchProvider.prototype = {
 	if (!mutterWindow)
 	    return null;
 
-	let [sizew, sizeh] = size;
-
         let windowTexture = mutterWindow.get_texture ();
 	let [width, height] = windowTexture.get_size();
-	let scale = Math.min(1.0, sizew / width, sizeh / height);
+	let scale = Math.min(1.0, size / width, size / height);
+
 	let clone = new Clutter.Clone ({ source: windowTexture,
 					 reactive: true,
                                          width: width * scale,
                                          height: height * scale });
 
-        let bin = new St.Bin();
-	bin.add_actor(clone);
-	return bin;
+        let group = new Clutter.Group();
+
+	let clonebin = new St.Bin();
+	clonebin.add_actor(clone);
+	clonebin.set_position( (size-(width*scale))/2,
+			       (size-(height*scale))/2);
+	group.add_actor(clonebin);
+
+	// add appicon
+        let tracker = Shell.WindowTracker.get_default();
+	let app = tracker.get_window_app(win);
+	let icon = app.create_icon_texture(size/3);
+	let iconbin = new St.Bin();
+	iconbin.set_opacity(200);
+	iconbin.add_actor(icon);
+	iconbin.set_position(size-size/3,size-size/3);
+	group.add_actor(iconbin);
+
+	return group;
     },
 
     _matchTerms: function(wins, terms){
