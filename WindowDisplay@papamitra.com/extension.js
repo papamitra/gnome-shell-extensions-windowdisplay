@@ -11,6 +11,8 @@ const Params = imports.misc.params;
 
 const St = imports.gi.St;
 
+var windowSearchProvider = null;
+
 function WindowSearchProvider() {
     this._init();
 }
@@ -20,6 +22,14 @@ WindowSearchProvider.prototype = {
 
     _init: function() {
         Search.SearchProvider.prototype._init.call(this, _('Windows'));
+    },
+
+    getResultMetas: function(resultIds) {
+        let metas = [];
+        for (let i = 0; i < resultIds.length; i++) {	    
+            metas.push(this.getResultMeta(resultIds[i]));
+        }
+        return metas;
     },
 
     getResultMeta: function(win) {
@@ -86,13 +96,14 @@ WindowSearchProvider.prototype = {
     getInitialResultSet: function(terms) {
         let screen = global.screen;
         let display = screen.get_display();
-	let windows = []
+	let windows = [];
 	for(let i=0; i < screen.n_workspaces; i++){
 	    windows = windows.concat(
 		display.get_tab_list(Meta.TabList.NORMAL,
 				     screen,
 				     screen.get_workspace_by_index(i)));
 	}
+
 	return this._matchTerms(windows, terms);
     },
 
@@ -110,26 +121,19 @@ WindowSearchProvider.prototype = {
 
 };
 
-function WindowSearchExtension() {
-    this._init();
+function init(meta) {
 }
 
-WindowSearchExtension.prototype = {
-    _init: function() {
-        // do nothing.
-    },
+function enable() {
+    if(windowSearchProvider==null) {
+	windowSearchProvider = new WindowSearchProvider();	    
+	Main.overview.addSearchProvider(windowSearchProvider);	
+    }
+}
 
-    enable: function() {
-        this._windowProvider = new WindowSearchProvider();
-        Main.overview.addSearchProvider(this._windowProvider);
-    },
-
-    disable: function() {
-        Main.overview.removeSearchProvider(this._windowProvider);
-	this._windowProvider = null;
-    },
-};
-
-function init() {
-    return new WindowSearchExtension();
+function disable() {
+    if(windowSearchProvider!=null) {
+	Main.overview.removeSearchProvider(windowSearchProvider);
+	windowSearchProvider = null;
+    }
 }
